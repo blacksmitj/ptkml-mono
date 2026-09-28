@@ -9,7 +9,7 @@ import { z } from "zod";
 const createApplicantSchema = z.object({
   workspaceId: z.string().min(1, "workspaceId is required"),
   idTkm: z.string().min(1, "idTkm is required"),
-  profileId: z.string().optional().nullable(),
+  profileId: z.string().min(1, "profileId is required"),
   universityId: z.string().optional().nullable(),
   mentorId: z.string().optional().nullable(),
   communicationStatus: z.enum(["RESPONDED", "NO_RESPONSE"]).optional().default("NO_RESPONSE"),
@@ -452,7 +452,7 @@ export async function POST(request: NextRequest) {
         workspaceId: body.workspaceId,
         universityId: body.universityId || null,
         mentorId: body.mentorId || null,
-        profileId: body.profileId || null,
+        profileId: body.profileId,
         communicationStatus: body.communicationStatus,
         fundDisbursement: body.fundDisbursement,
         willingness: body.willingness,

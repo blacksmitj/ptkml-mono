@@ -25,6 +25,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_ALLOW_LOCAL_LOGIN=$NEXT_PUBLIC_ALLOW_LOCAL_LOGIN
 ENV NEXT_PUBLIC_MOCK_API=$NEXT_PUBLIC_MOCK_API
 
+RUN npx prisma generate
 RUN npm run build
 
 # ─── Stage 3: Production Runner ───────────────────────────────────────────────

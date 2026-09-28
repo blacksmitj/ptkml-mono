@@ -179,7 +179,7 @@ export function ApplicantForm({ initialData }: { initialData?: any }) {
 
     updateApplicant({
       id,
-      ...data,
+      ...(data as any),
     }, {
       onSuccess: () => {
         toast.success("Profil peserta berhasil diperbarui")

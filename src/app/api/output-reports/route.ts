@@ -13,6 +13,7 @@ import {
   BpjsStatus,
   BpjsType,
   NikStatus,
+  FileCategory,
 } from "@prisma/client";
 import { z } from "zod";
 
