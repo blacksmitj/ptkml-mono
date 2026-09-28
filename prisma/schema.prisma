@@ -1,0 +1,708 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * ENUMS
+ */
+
+enum GlobalRole {
+  SUPER_ADMIN
+  USER
+  WORKSPACE_SUPERVISOR
+}
+
+enum WorkspaceRole {
+  UNIVERSITY_ADMIN
+  MENTOR
+  UNIVERSITY_SUPERVISOR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MarketingArea {
+  VILLAGE
+  DISTRICT
+  CITY
+  PROVINCE
+  INTERNATIONAL
+}
+
+enum BookkeepingType {
+  NONE
+  MANUAL
+  EXCEL
+  APPLICATION
+}
+
+enum BpjsStatus {
+  REGISTERED
+  NOT_REGISTERED
+}
+
+enum BpjsType {
+  WAGE_EARNER
+  NON_WAGE_EARNER
+}
+
+enum NikStatus {
+  IDLE
+  CHECKING
+  VALID
+  DUPLICATE
+}
+
+enum CommunicationStatus {
+  RESPONDED
+  NO_RESPONSE
+}
+
+enum FundDisbursement {
+  DISBURSED
+  NOT_DISBURSED
+}
+
+enum Willingness {
+  WILLING
+  NOT_WILLING
+}
+
+enum PresenceStatus {
+  FOUND
+  NOT_FOUND
+}
+
+enum ApplicantStatus {
+  ACTIVE
+  DROPPED
+  PENDING
+}
+
+enum MeetingType {
+  INDIVIDUAL
+  GROUP
+}
+
+enum DeliveryMethod {
+  ONLINE
+  OFFLINE
+}
+
+enum VisitType {
+  LOCAL
+  OUT_OF_TOWN
+  NONE
+}
+
+enum VerificationStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ConflictSource {
+  APPLICANT
+  MENTOR
+  BOTH
+}
+
+enum FileCategory {
+  LOGBOOK_DOCUMENTATION
+  EXPENSE_PROOF
+  EMPLOYEE_KTP
+  EMPLOYEE_SALARY_SLIP
+  EMPLOYEE_BPJS_CARD
+  OUTPUT_CASHFLOW_PROOF
+  OUTPUT_INCOME_PROOF
+  APPLICANT_BMC
+  APPLICANT_ACTION_PLAN
+}
+
+enum EventRecurrenceType {
+  MONTHLY_DAY
+  EXACT_DATE
+  WEEKLY
+}
+
+enum EventTargetRole {
+  ALL
+  MENTOR
+  UNIVERSITY_ADMIN
+  UNIVERSITY_SUPERVISOR
+  WORKSPACE_SUPERVISOR
+  SUPER_ADMIN
+}
+
+enum FollowUpStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum InterventionPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+/**
+ * MODELS
+ */
+
+model Province {
+  id        String    @id @default(cuid())
+  name      String
+  cities    City[]
+  addresses Address[]
+  createdAt DateTime  @default(now())
+}
+
+model City {
+  id         String     @id @default(cuid())
+  provinceId String
+  province   Province   @relation(fields: [provinceId], references: [id])
+  name       String
+  districts  District[]
+  addresses  Address[]
+  createdAt  DateTime   @default(now())
+
+  @@index([provinceId])
+}
+
+model District {
+  id           String        @id @default(cuid())
+  cityId       String
+  city         City          @relation(fields: [cityId], references: [id])
+  name         String
+  subdistricts Subdistrict[]
+  addresses    Address[]
+  createdAt    DateTime      @default(now())
+
+  @@index([cityId])
+}
+
+model Subdistrict {
+  id         String    @id @default(cuid())
+  districtId String
+  district   District  @relation(fields: [districtId], references: [id])
+  name       String
+  addresses  Address[]
+  createdAt  DateTime  @default(now())
+
+  @@index([districtId])
+}
+
+model Workspace {
+  id                      String                    @id @default(cuid())
+  name                    String
+  year                    Int
+  code                    String?
+  isActive                Boolean                   @default(true)
+  isInputFrozen           Boolean                   @default(false)
+  members                 WorkspaceMember[]
+  applicants              Applicant[]
+  logbooks                Logbook[]
+  outputReports           OutputReport[]
+  universities            WorkspaceUniversity[]
+  activityLogs            ActivityLog[]
+  dashboardEvents         DashboardEvent[]
+  followUpRecommendations FollowUpRecommendation[]
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+}
+
+model University {
+  id         String                @id @default(cuid())
+  name       String
+  logo       String?
+  isActive   Boolean               @default(true)
+  members    WorkspaceMember[]
+  applicants Applicant[]
+  workspaces WorkspaceUniversity[]
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+}
+
+model Profile {
+  id             String     @id @default(cuid())
+  name           String
+  nik            String     @unique
+  birthPlace     String
+  birthDate      DateTime
+  gender         Gender
+  photo          String?
+  email          String     @unique
+  whatsapp       String
+  noKk           String?
+  lastEducation  String?
+  addresses      Address[]
+  user           User?
+  applicant      Applicant?
+  employees      Employee[]
+  hasDisability  Boolean    @default(false)
+  disabilityType String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Address {
+  id              String      @id @default(cuid())
+  label           String
+  address         String
+  provinceId      String
+  province        Province    @relation(fields: [provinceId], references: [id])
+  provinceName    String
+  cityId          String
+  city            City        @relation(fields: [cityId], references: [id])
+  cityName        String
+  districtId      String
+  district        District    @relation(fields: [districtId], references: [id])
+  districtName    String
+  subdistrictId   String
+  subdistrict     Subdistrict @relation(fields: [subdistrictId], references: [id])
+  subdistrictName String
+  postalCode      String
+  latitude        Float?
+  longitude       Float?
+  profileId       String
+  profile         Profile     @relation(fields: [profileId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([provinceId])
+  @@index([cityId])
+  @@index([districtId])
+  @@index([subdistrictId])
+  @@index([profileId])
+}
+
+model User {
+  id                   String                    @id @default(cuid())
+  profileId            String                    @unique
+  profile              Profile                   @relation(fields: [profileId], references: [id])
+  username             String?                   @unique
+  password             String?
+  globalRole           GlobalRole                @default(USER)
+  loginFailedCount     Int                       @default(0)
+  lockedUntil          DateTime?
+  workspaceMemberships WorkspaceMember[]
+  activityLogs         ActivityLog[]
+  eventDismissals      DashboardEventDismissal[]
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+}
+
+model WorkspaceMember {
+  id                 String                    @id @default(cuid())
+  workspaceId        String
+  workspace          Workspace                 @relation(fields: [workspaceId], references: [id])
+  userId             String
+  user               User                      @relation(fields: [userId], references: [id])
+  universityId       String?
+  university         University?               @relation(fields: [universityId], references: [id])
+  role               WorkspaceRole
+  applicants         Applicant[]               @relation("MentorApplicants")
+  createdLogbooks    Logbook[]                 @relation("CreatedLogbooks")
+  verifiedLogbooks   Logbook[]                 @relation("VerifiedLogbooks")
+  verifiedOutputs    OutputReport[]            @relation("VerifiedOutputs")
+  createdFollowUps   FollowUpRecommendation[]  @relation("MentorFollowUps")
+  reviewedFollowUps  FollowUpRecommendation[]  @relation("ReviewedFollowUps")
+  verificationStatus VerificationStatus        @default(PENDING)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([universityId])
+}
+
+model Applicant {
+  id                     String                  @id @default(cuid())
+  idTkm                  String                  @unique
+  workspaceId            String
+  workspace              Workspace               @relation(fields: [workspaceId], references: [id])
+  universityId           String?
+  university             University?             @relation(fields: [universityId], references: [id])
+  mentorId               String?
+  mentor                 WorkspaceMember?        @relation("MentorApplicants", fields: [mentorId], references: [id])
+  profileId              String                  @unique
+  profile                Profile                 @relation(fields: [profileId], references: [id])
+  communicationStatus    CommunicationStatus     @default(NO_RESPONSE)
+  fundDisbursement       FundDisbursement        @default(NOT_DISBURSED)
+  willingness            Willingness             @default(NOT_WILLING)
+  reasonNotWilling       String?
+  presenceStatus         PresenceStatus          @default(NOT_FOUND)
+  status                 ApplicantStatus         @default(ACTIVE)
+  reasonDropped          String?
+  outputReports          OutputReport[]
+  logbooks               LogbookApplicant[]
+  files                  File[]
+  businessProfile        BusinessProfile?
+  followUpRecommendation FollowUpRecommendation?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+
+  @@index([workspaceId])
+  @@index([universityId])
+  @@index([mentorId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, mentorId])
+  @@index([workspaceId, universityId])
+}
+
+model BusinessProfile {
+  id             String    @id @default(cuid())
+  applicantId    String    @unique
+  applicant      Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  businessName   String
+  businessSector String
+  businessType   String
+  description    String?   @db.Text
+  mainProduct    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Logbook {
+  id                  String             @id @default(cuid())
+  workspaceId         String
+  workspace           Workspace          @relation(fields: [workspaceId], references: [id])
+  createdById         String
+  createdBy           WorkspaceMember    @relation("CreatedLogbooks", fields: [createdById], references: [id])
+  logbookDate         DateTime
+  startTime           DateTime
+  endTime             DateTime
+  jpl                 Int                @default(1)
+  deliveryMethod      DeliveryMethod
+  meetingType         MeetingType
+  visitType           VisitType
+  mentoringMaterial   String
+  activitySummary     String             @db.Text
+  obstacle            String             @db.Text
+  solutions           String             @db.Text
+  totalExpense        Float?
+  reasonNoExpense     String?
+  verificationStatus  VerificationStatus @default(PENDING)
+  verificationNote    String?
+  rebuttalNote        String?            @db.Text
+  verificationHistory Json?              @default("[]")
+  verifiedAt          DateTime?
+  verifiedById        String?
+  verifiedBy          WorkspaceMember?   @relation("VerifiedLogbooks", fields: [verifiedById], references: [id])
+  applicants          LogbookApplicant[]
+  files               File[]
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([workspaceId])
+  @@index([createdById])
+  @@index([verifiedById])
+  @@index([workspaceId, verificationStatus])
+}
+
+model LogbookApplicant {
+  logbookId   String
+  applicantId String
+  logbook     Logbook   @relation(fields: [logbookId], references: [id], onDelete: Cascade)
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@id([logbookId, applicantId])
+  @@index([applicantId])
+}
+
+model OutputReport {
+  id                         String             @id @default(cuid())
+  workspaceId                String
+  workspace                  Workspace          @relation(fields: [workspaceId], references: [id])
+  applicantId                String
+  applicant                  Applicant          @relation(fields: [applicantId], references: [id])
+  monthReport                Int
+  productionCapacity         Float
+  productionCapacityUnit     String
+  salesVolume                Float
+  salesVolumeUnit            String
+  marketingArea              MarketingArea
+  revenue                    Float
+  bookkeepingCashflow        BookkeepingType
+  bookkeepingIncomeStatement BookkeepingType
+  businessCondition          String             @db.Text
+  obstacle                   String?            @db.Text
+  hasRemindLpj               Boolean            @default(false)
+  verificationStatus         VerificationStatus @default(PENDING)
+  verificationNote           String?
+  rebuttalNote               String?            @db.Text
+  verificationHistory        Json?              @default("[]")
+  verifiedAt                 DateTime?
+  verifiedById               String?
+  verifiedBy                 WorkspaceMember?   @relation("VerifiedOutputs", fields: [verifiedById], references: [id])
+  employees                  Employee[]
+  files                      File[]
+  createdAt                  DateTime           @default(now())
+  updatedAt                  DateTime           @updatedAt
+
+  @@index([workspaceId])
+  @@index([applicantId])
+  @@index([verifiedById])
+  @@index([applicantId, verificationStatus])
+  @@index([workspaceId, verificationStatus])
+}
+
+model Employee {
+  id                  String          @id @default(cuid())
+  outputId            String
+  output              OutputReport    @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  profileId           String?
+  profile             Profile?        @relation(fields: [profileId], references: [id])
+  name                String
+  role                String
+  gender              Gender
+  hasDisability       Boolean         @default(false)
+  disabilityType      String?
+  employmentStatus    String
+  nik                 String
+  bpjsStatus          BpjsStatus
+  bpjsType            BpjsType?
+  bpjsNumber          String?
+  nikStatus           NikStatus       @default(IDLE)
+  hasIdentityConflict Boolean         @default(false)
+  conflictSource      ConflictSource?
+  files               File[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([outputId])
+  @@index([profileId])
+}
+
+model File {
+  id String @id @default(cuid())
+
+  // Storage optimization untuk MinIO/S3
+  objectKey String  @default("")
+  bucket    String?
+  url       String?
+  mimeType  String?
+
+  // Relasi existing
+  category    FileCategory
+  logbookId   String?
+  logbook     Logbook?      @relation(fields: [logbookId], references: [id], onDelete: Cascade)
+  employeeId  String?
+  employee    Employee?     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  outputId    String?
+  output      OutputReport? @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  applicantId String?
+  applicant   Applicant?    @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi ke layer OCR
+  ocrResult OcrResult?
+
+  @@index([logbookId])
+  @@index([employeeId])
+  @@index([outputId])
+  @@index([applicantId])
+}
+
+model WorkspaceUniversity {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([workspaceId, universityId])
+  @@index([workspaceId])
+  @@index([universityId])
+}
+
+// ------------------------------------------------------
+// OCR MODELS & ENUMS
+// ------------------------------------------------------
+
+enum OcrStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum OcrDocumentType {
+  KTP
+  BPJS
+  SALARY_SLIP
+  REPORT
+  RECEIPT
+  CASHFLOW
+  OTHER
+}
+
+model OcrResult {
+  id String @id @default(cuid())
+
+  fileId String @unique
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  status       OcrStatus       @default(PENDING)
+  documentType OcrDocumentType
+
+  rawText    String? @db.Text
+  parsedData Json? // Struktur dinamis sesuai tipe dokumen
+
+  confidence     Float?
+  processingTime Int? // Dalam milidetik
+  engine         String? // Contoh: "Google Vision", "Tesseract", "AWS Textract"
+  errorMessage   String? @db.Text
+
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  validations OcrValidation[]
+
+  @@index([status])
+  @@index([documentType])
+}
+
+model OcrValidation {
+  id String @id @default(cuid())
+
+  ocrResultId String
+  ocrResult   OcrResult @relation(fields: [ocrResultId], references: [id], onDelete: Cascade)
+
+  fieldName String // Contoh: "nik", "total_amount", "nama"
+
+  manualValue    String? @db.Text
+  extractedValue String? @db.Text
+
+  isMatch    Boolean // Kunci untuk trigger notifikasi mismatch di dashboard
+  confidence Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([ocrResultId])
+}
+
+// Model opsional untuk tracking background jobs
+model OcrJob {
+  id     String @id @default(cuid())
+  fileId String @unique // Asumsi 1 file = 1 job saat ini
+
+  status     OcrStatus @default(PENDING)
+  retryCount Int       @default(0)
+
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ActivityLog {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type        String // e.g. "LOGBOOK_CREATED", "LOGBOOK_APPROVED", "MEMBER_REGISTERED", "AUTH_LOGIN", etc.
+  title       String
+  description String
+  status      String // "emerald" | "blue" | "amber" | "indigo" | "destructive"
+  metadata    Json? // Untuk data tambahan jika diperlukan
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model DashboardEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String? @db.Text
+
+  recurrenceType EventRecurrenceType @default(MONTHLY_DAY)
+  dayOfMonth     Int? // e.g. 18 or 23
+  dayOfWeek      Int? // 1-7 (Mon-Sun)
+  exactDate      DateTime? // Specific date
+
+  activeDaysBefore Int @default(5)
+  activeDaysAfter  Int @default(1)
+
+  actionUrl   String?
+  actionLabel String?
+  targetRole  EventTargetRole @default(MENTOR)
+  isActive    Boolean         @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dismissals DashboardEventDismissal[]
+
+  @@index([workspaceId])
+  @@index([targetRole])
+  @@index([isActive])
+}
+
+model DashboardEventDismissal {
+  id          String         @id @default(cuid())
+  eventId     String
+  event       DashboardEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dismissedAt DateTime       @default(now())
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model FollowUpRecommendation {
+  id              String         @id @default(cuid())
+  applicantId     String         @unique
+  applicant       Applicant      @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  mentorId        String
+  mentor          WorkspaceMember @relation("MentorFollowUps", fields: [mentorId], references: [id])
+  workspaceId     String
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  findings        Json?
+  recommendations Json?
+  mentorNote      String?        @db.Text
+
+  status          FollowUpStatus @default(DRAFT)
+  reviewNote      String?        @db.Text
+  reviewedAt      DateTime?
+  reviewedById    String?
+  reviewedBy      WorkspaceMember? @relation("ReviewedFollowUps", fields: [reviewedById], references: [id])
+
+  submittedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([applicantId])
+  @@index([mentorId])
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+}
